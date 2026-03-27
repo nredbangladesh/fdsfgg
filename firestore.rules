@@ -1,0 +1,225 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+    
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isValidStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+    
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    
+    function getUserSchoolId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId;
+    }
+
+    function isSameSchool(schoolId) {
+      return isAuthenticated() && getUserSchoolId() == schoolId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['schooladmin', 'superadmin'] ||
+        (request.auth.token.email == "nredbangladesh@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.schoolId is string && data.schoolId.size() > 0 &&
+             data.role in ['student', 'schoolmod', 'schooladmin', 'superadmin'] &&
+             data.status in ['active', 'suspended', 'banned', 'shadowbanned'];
+    }
+    
+    function isValidPost(data) {
+      return data.authorId is string && data.authorId == request.auth.uid &&
+             data.schoolId is string && data.schoolId == getUserSchoolId() &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 500 &&
+             data.audience in ['followers', 'campus'] &&
+             data.status in ['active', 'hidden'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /system/{stateId} {
+      allow read: if true; // App state must be readable before login
+      allow write: if isAdmin();
+    }
+    
+    match /schools/{schoolId} {
+      allow read: if true; // Needed for signup
+      allow write: if isAdmin();
+    }
+    
+    match /users/{userId} {
+      // Users can read profiles from their own school
+      allow read: if isAuthenticated() && (isOwner(userId) || isSameSchool(resource.data.schoolId) || isAdmin());
+      
+      // Users can create their own profile, but cannot assign privileged roles
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    ((request.resource.data.role == 'student' && request.resource.data.status == 'active') || isAdmin());
+                    
+      // Users can update their own profile, but cannot change role, status, or schoolId
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                    request.resource.data.role == resource.data.role &&
+                    request.resource.data.status == resource.data.status &&
+                    request.resource.data.schoolId == resource.data.schoolId &&
+                    uidNotModified()) || isAdmin();
+                    
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    match /posts/{postId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || isAdmin());
+      allow create: if isAuthenticated() && isValidPost(request.resource.data) && 
+                    request.resource.data.reactionCount == 0 &&
+                    request.resource.data.replyCount == 0 &&
+                    request.resource.data.reportCount == 0;
+      allow update: if isAuthenticated() && isValidPost(request.resource.data) &&
+                    (
+                      // Owner can update text/media, but not counts or authorId
+                      (isDocOwner() && 
+                       request.resource.data.authorId == resource.data.authorId &&
+                       request.resource.data.schoolId == resource.data.schoolId &&
+                       request.resource.data.reactionCount == resource.data.reactionCount &&
+                       request.resource.data.replyCount == resource.data.replyCount &&
+                       request.resource.data.reportCount == resource.data.reportCount) ||
+                      // Anyone in same school can increment reactionCount by 1 (simplified)
+                      (isSameSchool(resource.data.schoolId) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactionCount']) &&
+                       math.abs(request.resource.data.reactionCount - resource.data.reactionCount) == 1) ||
+                      isAdmin()
+                    );
+      allow delete: if isDocOwner() || isAdmin();
+    }
+    
+    match /events/{eventId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid &&
+                    request.resource.data.schoolId == getUserSchoolId();
+      allow update: if isAuthenticated() && (request.resource.data.creatorId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.creatorId == request.auth.uid || isAdmin());
+    }
+    
+    match /clubs/{clubId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid &&
+                    request.resource.data.schoolId == getUserSchoolId();
+      allow update: if isAuthenticated() && (request.resource.data.creatorId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.creatorId == request.auth.uid || isAdmin());
+    }
+    
+    match /sparks/{sparkId} {
+      // Only sender or receiver can read
+      allow read: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid &&
+                    request.resource.data.schoolId == getUserSchoolId() &&
+                    request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && (
+                      (resource.data.receiverId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && request.resource.data.status in ['mutual', 'rejected']) ||
+                      isAdmin()
+                    );
+      allow delete: if isAuthenticated() && (resource.data.senderId == request.auth.uid || isAdmin());
+    }
+    
+    match /stories/{storyId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.schoolId == getUserSchoolId() &&
+                    request.resource.data.createdAt == request.time &&
+                    request.resource.data.expiresAt == request.time + duration.value(24, 'h');
+      allow update: if isAuthenticated() && (
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewers']) &&
+                       request.resource.data.viewers.size() == resource.data.viewers.size() + 1 &&
+                       request.resource.data.viewers.hasAll(resource.data.viewers) &&
+                       request.auth.uid in request.resource.data.viewers) ||
+                      isAdmin()
+                    );
+      allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+    
+    match /messages/{messageId} {
+      // Users can only read messages they sent or received
+      allow read: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+      
+      // Users can only create messages where they are the sender
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid &&
+                    request.resource.data.read == false &&
+                    request.resource.data.createdAt == request.time;
+                    
+      // Users can only mark messages as read if they are the receiver
+      allow update: if isAuthenticated() && (
+                      (resource.data.receiverId == request.auth.uid && 
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+                       request.resource.data.read == true) ||
+                      isAdmin()
+                    );
+                    
+      allow delete: if isAdmin();
+    }
+    
+    match /follows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.followerId == request.auth.uid &&
+                    request.resource.data.createdAt == request.time;
+      allow delete: if isAuthenticated() && (resource.data.followerId == request.auth.uid || isAdmin());
+    }
+    
+    match /ai_chats/{chatId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.createdAt == request.time;
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /admin_photo_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+  }
+}

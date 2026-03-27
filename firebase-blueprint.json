@@ -1,0 +1,256 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A verified student user of the platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "birthYear": { "type": "number" },
+        "academicStatus": { "type": "string" },
+        "major": { "type": "string" },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "bio": { "type": "string" },
+        "pronouns": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Woman", "Man", "Other"] },
+        "interestedIn": { "type": "string", "enum": ["Women", "Men", "Both"] },
+        "birthDate": { "type": "string", "format": "date-time" },
+        "academicClass": { "type": "string" },
+        "session": { "type": "string" },
+        "address": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "relationshipStatus": { "type": "string" },
+        "skills": { "type": "string" },
+        "onboardingCompleted": { "type": "boolean" },
+        "geohash": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "schoolmod", "schooladmin", "superadmin"] },
+        "status": { "type": "string", "enum": ["active", "suspended", "banned", "shadowbanned"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "name", "schoolId", "role", "status", "createdAt"]
+    },
+    "School": {
+      "title": "School",
+      "description": "An approved educational institution.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "domains": { "type": "array", "items": { "type": "string" } },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "domains", "active"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A post in the campus feed.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "text": { "type": "string" },
+        "mediaUrls": { "type": "array", "items": { "type": "string" } },
+        "imageUrl": { "type": "string" },
+        "adminImageUrl": { "type": "string" },
+        "locationName": { "type": "string" },
+        "topicTag": { "type": "string" },
+        "audience": { "type": "string", "enum": ["followers", "campus"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "reactionCount": { "type": "number" },
+        "replyCount": { "type": "number" },
+        "reportCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "hidden"] }
+      },
+      "required": ["authorId", "schoolId", "text", "audience", "createdAt", "status"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A campus event.",
+      "type": "object",
+      "properties": {
+        "creatorId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "locationName": { "type": "string" },
+        "category": { "type": "string" },
+        "maxAttendees": { "type": "number" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "reportCount": { "type": "number" }
+      },
+      "required": ["creatorId", "schoolId", "title", "date", "isPublic", "createdAt"]
+    },
+    "Club": {
+      "title": "Club",
+      "description": "A student club or group.",
+      "type": "object",
+      "properties": {
+        "creatorId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "memberCount": { "type": "number" },
+        "isModerated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["creatorId", "schoolId", "name", "category", "isModerated", "createdAt"]
+    },
+    "Spark": {
+      "title": "Spark",
+      "description": "An expression of interest from one user to another.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "mutual", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverId", "schoolId", "status", "createdAt"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A temporary visual post that expires after 24 hours.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "adminMediaUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "viewers": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["authorId", "schoolId", "mediaUrl", "mediaType", "createdAt", "expiresAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A private message between two users.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverId", "text", "read", "createdAt"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "A following relationship between two users.",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
+    },
+    "AIChat": {
+      "title": "AIChat",
+      "description": "A message in an AI chat session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "role", "text", "createdAt"]
+    },
+    "SystemState": {
+      "title": "SystemState",
+      "description": "Global or school-specific app state for maintenance and kill-switch.",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["live", "maintenance", "paused", "sunset", "version_blocked"] },
+        "scope": { "type": "string" },
+        "message": { "type": "object" },
+        "minVersion": { "type": "string" },
+        "latestVersion": { "type": "string" },
+        "forceUpdate": { "type": "boolean" },
+        "allowedRoles": { "type": "array", "items": { "type": "string" } },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "scheduledBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["status", "scope", "updatedAt"]
+    },
+    "AdminPhotoLog": {
+      "title": "AdminPhotoLog",
+      "description": "Log of photos uploaded for admin review.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "clientUrl": { "type": "string" },
+        "adminUrl": { "type": "string" },
+        "context": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "edited", "deleted"] },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "clientUrl", "adminUrl", "context", "status", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles."
+    },
+    "/schools/{schoolId}": {
+      "schema": { "$ref": "#/entities/School" },
+      "description": "Approved schools."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Campus feed posts."
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" },
+      "description": "Campus events."
+    },
+    "/clubs/{clubId}": {
+      "schema": { "$ref": "#/entities/Club" },
+      "description": "Student clubs."
+    },
+    "/sparks/{sparkId}": {
+      "schema": { "$ref": "#/entities/Spark" },
+      "description": "Sparks (interest expressions)."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/Story" },
+      "description": "Campus stories."
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Private messages."
+    },
+    "/follows/{followId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "User following relationships."
+    },
+    "/ai_chats/{chatId}": {
+      "schema": { "$ref": "#/entities/AIChat" },
+      "description": "AI chat history."
+    },
+    "/system/{stateId}": {
+      "schema": { "$ref": "#/entities/SystemState" },
+      "description": "System state documents (e.g., appState)."
+    },
+    "/admin_photo_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminPhotoLog" },
+      "description": "Admin photo logs."
+    }
+  }
+}

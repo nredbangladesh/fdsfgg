@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-bg: #0a1128;
+  --color-ink-text: #ffffff;
+  --color-ink-accent: #007bff;
+  
+  --color-petal-bg: #fdfbf7;
+  --color-petal-text: #333333;
+  --color-petal-accent: #e5989b;
+  
+  --color-forest-bg: #1a3a2a;
+  --color-forest-text: #fdfdfd;
+  --color-forest-accent: #ffb703;
+  
+  --color-slate-bg: #121212;
+  --color-slate-text: #e0e0e0;
+  --color-slate-accent: #9d4edd;
+  
+  --color-chalk-bg: #ffffff;
+  --color-chalk-text: #1a1a1a;
+  --color-chalk-accent: #f28482;
+}
+
+@layer base {
+  :root {
+    --bg-color: var(--color-chalk-bg);
+    --text-color: var(--color-chalk-text);
+    --accent-color: var(--color-chalk-accent);
+  }
+
+  .ink {
+    --bg-color: var(--color-ink-bg);
+    --text-color: var(--color-ink-text);
+    --accent-color: var(--color-ink-accent);
+  }
+
+  .petal {
+    --bg-color: var(--color-petal-bg);
+    --text-color: var(--color-petal-text);
+    --accent-color: var(--color-petal-accent);
+  }
+
+  .forest {
+    --bg-color: var(--color-forest-bg);
+    --text-color: var(--color-forest-text);
+    --accent-color: var(--color-forest-accent);
+  }
+
+  .slate {
+    --bg-color: var(--color-slate-bg);
+    --text-color: var(--color-slate-text);
+    --accent-color: var(--color-slate-accent);
+  }
+
+  .chalk {
+    --bg-color: var(--color-chalk-bg);
+    --text-color: var(--color-chalk-text);
+    --accent-color: var(--color-chalk-accent);
+  }
+
+  html {
+    background-color: var(--bg-color);
+    color-scheme: light dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+}

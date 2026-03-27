@@ -1,0 +1,7 @@
+{
+  "name": "Remix: app 4.0",
+  "description": "A student-only social network for campus life, community, and shared experiences.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

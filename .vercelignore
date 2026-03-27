@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+COMPLETION_REPORT.md
+FILES_MANIFEST.md
+FINAL_INTEGRATION_STEPS.md
+IMPLEMENTATION_SUMMARY.md
+QUICKSTART_RATE_LIMITING.md
+RATE_LIMITING_IMPLEMENTATION_GUIDE.md
+main copy 1.zip
